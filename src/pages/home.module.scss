@@ -1,1 +1,37 @@
-// TODO
+.container {
+  max-width: 1120px;
+  margin: 0 auto;
+  margin: 0 23.125rem;
+
+  a {
+    display: block;
+    margin-bottom: 3rem;
+
+    h1 {
+      margin-bottom: 0.5rem;
+      transition: color 0.2s;
+    }
+
+    p {
+      font-size: 1.125rem;
+      margin-bottom: 1.5rem;
+      color: var(--gray-100);
+    }
+
+    &:hover h1 {
+      color: var(--magenta);
+    }
+  }
+}
+
+.loadMorePostsButton {
+  color: var(--magenta);
+  background: transparent;
+  border: 0;
+
+  transition: filter 0.2s;
+
+  &:hover {
+    filter: brightness(0.8)
+  }
+}
