@@ -34,3 +34,19 @@
     filter: brightness(0.8)
   }
 }
+
+@media (max-width: 1080px) {
+  .container {
+    display: flex;
+    flex-direction: column;
+    margin: 0 8rem;
+  }
+}
+
+@media (max-width: 720px) {
+  .container {
+    display: flex;
+    flex-direction: column;
+    margin: 0 3rem;
+  }
+}

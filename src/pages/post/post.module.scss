@@ -22,9 +22,15 @@
 
 .banner {
   display: flex;
-  width: 100%;
-  height: 25rem;
   margin-bottom: 5rem;
+  justify-content: center;
+  background: var(--gray-900);
+  filter: opacity(0.8);
+  img {
+    height: 25rem;
+    width: 100%;
+    object-fit: cover;
+  }
 }
 
 .postContent {
@@ -79,5 +85,27 @@
   .nextPost {
     margin-left: auto;
     text-align: right;
+  }
+}
+
+@media (max-width: 1080px) {
+  .container {
+    display: flex;
+    flex-direction: column;
+    margin: 0 8rem;
+  }
+
+  .banner {
+    img {
+      height: 10rem;
+    }
+  }
+}
+
+@media (max-width: 720px) {
+  .container {
+    display: flex;
+    flex-direction: column;
+    margin: 0 3rem;
   }
 }

@@ -66,7 +66,9 @@ export default function Post({
         <title>{post.data.title} | spacetraveling</title>
       </Head>
       <Header />
-      <img src={post.data.banner.url} alt="banner" className={styles.banner} />
+      <div className={styles.banner}>
+        <img src={post.data.banner.url} alt="banner" />
+      </div>
       <main className={styles.container}>
         <h1>{post.data.title}</h1>
         <div className={commonStyles.postInfo}>
@@ -225,7 +227,7 @@ export const getStaticProps: GetStaticProps = async ({
       }),
     },
   };
-
+  console.log(response.data.banner);
   return {
     props: { post, preview, previousPost, nextPost },
   };

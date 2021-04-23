@@ -2,3 +2,11 @@
   padding: 2.625rem 0;
   margin: 0 23.125rem;
 }
+
+@media (max-width: 1080px) {
+  .headerContainer {
+    display: flex;
+    justify-content: center;
+    margin: 0;
+  }
+}
