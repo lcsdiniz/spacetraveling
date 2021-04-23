@@ -1,9 +1,14 @@
 .postInfo {
+  color: var(--gray-100);
   display: flex;
+  flex-direction: column;
+  > div {
+    display: flex;
+    flex-direction: row;
+  }
   span {
     display: flex;
     align-items: center;
-    color: var(--gray-100);
     font-size: 0.825rem;
 
     & + span {
@@ -11,7 +16,30 @@
     }
   }
 
+  p {
+    margin-top: 1rem;
+    font-size: 0.875rem;
+  }
+
   svg {
     margin-right: 0.5rem;
+  }
+}
+
+.exitPreview {
+  text-align: center;
+  background: var(--white);
+  color: var(--gray-900);
+  border-radius: 4px;
+  font-size: 1.125rem;
+  font-weight: bold;
+  margin: 5.5rem 0 6.625rem;
+
+  a {
+    display: block;
+    padding: 1.125rem 0;
+    &:hover {
+      text-decoration: underline;
+    }
   }
 }

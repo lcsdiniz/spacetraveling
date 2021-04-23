@@ -1,19 +1,21 @@
 import { GetStaticPaths, GetStaticProps } from 'next';
 import Head from 'next/head';
 import Prismic from '@prismicio/client';
-import { format } from 'date-fns';
+import { format, parseISO } from 'date-fns';
 import ptBR from 'date-fns/locale/pt-BR';
 import { FiCalendar, FiUser, FiClock } from 'react-icons/fi';
 import { RichText } from 'prismic-dom';
 import { useRouter } from 'next/router';
+import Link from 'next/link';
 import Header from '../../components/Header';
 import { getPrismicClient } from '../../services/prismic';
-
+import Comments from '../../components/Comments';
 import commonStyles from '../../styles/common.module.scss';
 import styles from './post.module.scss';
 
 interface Post {
   first_publication_date: string | null;
+  last_publication_date: string | null;
   data: {
     title: string;
     banner: {
@@ -33,16 +35,19 @@ interface PostProps {
   post: Post;
 }
 
-export default function Post({ post }: PostProps) {
+export default function Post({
+  post,
+  preview,
+  previousPost,
+  nextPost,
+}: PostProps) {
   const router = useRouter();
 
   if (router.isFallback) {
     return <h2>Carregando...</h2>;
   }
   const HUMAN_ESTIMATED_NUMBER_OF_WORD_READ_PER_MINUTE = 200;
-  // const formattedDate = format(new Date(post.first_publication_date), 'PP', {
-  //   locale: ptBR,
-  // });
+
   const totalWordsQuantity = post.data.content.reduce(
     (wordsAccumulator, valorAtual) => {
       wordsAccumulator += RichText.asText(valorAtual.body).split(/\W+/).length;
@@ -65,20 +70,33 @@ export default function Post({ post }: PostProps) {
       <main className={styles.container}>
         <h1>{post.data.title}</h1>
         <div className={commonStyles.postInfo}>
-          <span>
-            <FiCalendar size={20} />
-            {format(new Date(post.first_publication_date), 'PP', {
-              locale: ptBR,
-            })}
-          </span>
-          <span>
-            <FiUser size={20} />
-            {post.data.author}
-          </span>
-          <span>
-            <FiClock size={20} />
-            {estimatedReadingTime} min
-          </span>
+          <div>
+            <span>
+              <FiCalendar size={20} />
+              {format(new Date(post.first_publication_date), 'PP', {
+                locale: ptBR,
+              })}
+            </span>
+            <span>
+              <FiUser size={20} />
+              {post.data.author}
+            </span>
+            <span>
+              <FiClock size={20} />
+              {estimatedReadingTime} min
+            </span>
+          </div>
+          {post.last_publication_date !== post.first_publication_date && (
+            <p>
+              {format(
+                parseISO(post.last_publication_date),
+                "'*editado em' dd MMM yyyy', às' HH:mm",
+                {
+                  locale: ptBR,
+                }
+              )}
+            </p>
+          )}
         </div>
         {post.data.content.map(content => (
           <article key={content.heading} className={styles.postContent}>
@@ -90,6 +108,39 @@ export default function Post({ post }: PostProps) {
             />
           </article>
         ))}
+        <hr />
+        <nav className={styles.navigate}>
+          {previousPost && (
+            <div>
+              <Link href={`/post/${previousPost.uid}`}>
+                <a>
+                  <p>{previousPost.title}</p>
+                </a>
+              </Link>
+              <span>Previous post</span>
+            </div>
+          )}
+          {nextPost && (
+            <div className={styles.nextPost}>
+              <Link href={`/post/${nextPost.uid}`}>
+                <a>
+                  <p>{nextPost.title}</p>
+                </a>
+              </Link>
+              <span>Next post</span>
+            </div>
+          )}
+        </nav>
+        <footer>
+          <Comments />
+        </footer>
+        {preview && (
+          <div className={commonStyles.exitPreview}>
+            <Link href="/api/exit-preview">
+              <a>Exit preview mode</a>
+            </Link>
+          </div>
+        )}
       </main>
     </>
   );
@@ -109,13 +160,55 @@ export const getStaticPaths: GetStaticPaths = async () => {
   };
 };
 
-export const getStaticProps: GetStaticProps = async context => {
+export const getStaticProps: GetStaticProps = async ({
+  params,
+  preview = false,
+  previewData,
+}) => {
   const prismic = getPrismicClient();
-  const { slug } = context.params;
+  const { slug } = params;
 
-  const response = await prismic.getByUID('posts', String(slug), {});
+  const response = await prismic.getByUID('posts', String(slug), {
+    ref: previewData?.ref || null,
+  });
+
+  const previousPostResponse = await prismic.query(
+    [Prismic.Predicates.at('document.type', 'posts')],
+    {
+      pageSize: 1,
+      after: response.id,
+      orderings: '[document.first_publication_date]',
+    }
+  );
+
+  const nextPostResponse = await prismic.query(
+    [Prismic.Predicates.at('document.type', 'posts')],
+    {
+      pageSize: 1,
+      after: response.id,
+      orderings: '[document.first_publication_date desc]',
+    }
+  );
+
+  const previousPost =
+    previousPostResponse.results.length > 0
+      ? {
+          uid: previousPostResponse.results[0]?.uid,
+          title: previousPostResponse.results[0]?.data?.title,
+        }
+      : null;
+
+  const nextPost =
+    nextPostResponse.results.length > 0
+      ? {
+          uid: nextPostResponse.results[0]?.uid,
+          title: nextPostResponse.results[0]?.data?.title,
+        }
+      : null;
+
   const post = {
     first_publication_date: response.first_publication_date,
+    last_publication_date: response.last_publication_date,
     uid: response.uid,
     data: {
       title: response.data.title,
@@ -134,6 +227,6 @@ export const getStaticProps: GetStaticProps = async context => {
   };
 
   return {
-    props: { post },
+    props: { post, preview, previousPost, nextPost },
   };
 };

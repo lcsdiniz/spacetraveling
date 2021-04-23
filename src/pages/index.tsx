@@ -4,7 +4,7 @@ import { FiCalendar, FiUser } from 'react-icons/fi';
 import Prismic from '@prismicio/client';
 import { format } from 'date-fns';
 import ptBR from 'date-fns/locale/pt-BR';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
 import Header from '../components/Header';
 import { getPrismicClient } from '../services/prismic';
@@ -28,9 +28,13 @@ interface PostPagination {
 
 interface HomeProps {
   postsPagination: PostPagination;
+  preview: boolean;
 }
 
-export default function Home({ postsPagination }: HomeProps) {
+export default function Home({
+  postsPagination,
+  preview,
+}: HomeProps): JSX.Element {
   const [postsResults, setPostsResults] = useState<Post[]>(
     postsPagination.results.map(post => {
       return {
@@ -48,7 +52,7 @@ export default function Home({ postsPagination }: HomeProps) {
   const [nextPage, setNextPage] = useState(postsPagination.next_page);
 
   async function fetchNextPage(postPagination: PostPagination) {
-    fetch(postPagination.next_page)
+    fetch(nextPage)
       .then(response => response.json())
       .then(data => {
         const results = data.results.map(post => {
@@ -87,14 +91,16 @@ export default function Home({ postsPagination }: HomeProps) {
               <h1>{post.data.title}</h1>
               <p>{post.data.subtitle}</p>
               <div className={commonStyles.postInfo}>
-                <span>
-                  <FiCalendar size={20} />
-                  {post.first_publication_date}
-                </span>
-                <span>
-                  <FiUser size={20} />
-                  {post.data.author}
-                </span>
+                <div>
+                  <span>
+                    <FiCalendar size={20} />
+                    {post.first_publication_date}
+                  </span>
+                  <span>
+                    <FiUser size={20} />
+                    {post.data.author}
+                  </span>
+                </div>
               </div>
             </a>
           </Link>
@@ -107,21 +113,31 @@ export default function Home({ postsPagination }: HomeProps) {
             }}
             className={styles.loadMorePostsButton}
           >
-            Carregar mais posts
+            Load more posts
           </button>
+        )}
+        {preview && (
+          <div className={commonStyles.exitPreview}>
+            <Link href="/api/exit-preview">
+              <a>Exit preview mode</a>
+            </Link>
+          </div>
         )}
       </main>
     </>
   );
 }
 
-export const getStaticProps: GetStaticProps = async () => {
+export const getStaticProps: GetStaticProps<HomeProps> = async ({
+  preview = false,
+  previewData,
+}) => {
   const prismic = getPrismicClient();
   const postsResponse = await prismic.query(
     [Prismic.predicates.at('document.type', 'posts')],
     {
-      // fetch: ['post.title', 'post.content'],
-      pageSize: 1,
+      pageSize: 2,
+      ref: previewData?.ref ?? null,
     }
   );
 
@@ -145,6 +161,7 @@ export const getStaticProps: GetStaticProps = async () => {
   return {
     props: {
       postsPagination,
+      preview,
     },
   };
 };
