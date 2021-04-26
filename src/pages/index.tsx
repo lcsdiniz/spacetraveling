@@ -2,14 +2,13 @@ import { GetStaticProps } from 'next';
 import Head from 'next/head';
 import { FiCalendar, FiUser } from 'react-icons/fi';
 import Prismic from '@prismicio/client';
-import { format } from 'date-fns';
-import ptBR from 'date-fns/locale/pt-BR';
 import { useState } from 'react';
 import Link from 'next/link';
 import Header from '../components/Header';
 import { getPrismicClient } from '../services/prismic';
 import commonStyles from '../styles/common.module.scss';
 import styles from './home.module.scss';
+import { publicationDateFormat } from '../utils/formatDate';
 
 interface Post {
   uid?: string;
@@ -39,31 +38,23 @@ export default function Home({
     postsPagination.results.map(post => {
       return {
         ...post,
-        first_publication_date: format(
-          new Date(post.first_publication_date),
-          'PP',
-          {
-            locale: ptBR,
-          }
+        first_publication_date: publicationDateFormat(
+          post.first_publication_date
         ),
       };
     })
   );
   const [nextPage, setNextPage] = useState(postsPagination.next_page);
 
-  async function fetchNextPage(postPagination: PostPagination) {
+  async function fetchNextPage(): Promise<void> {
     fetch(nextPage)
       .then(response => response.json())
       .then(data => {
         const results = data.results.map(post => {
           return {
             uid: post.uid,
-            first_publication_date: format(
-              new Date(post.first_publication_date),
-              'PP',
-              {
-                locale: ptBR,
-              }
+            first_publication_date: publicationDateFormat(
+              post.first_publication_date
             ),
             data: {
               title: post.data.title,
@@ -109,7 +100,7 @@ export default function Home({
           <button
             type="button"
             onClick={() => {
-              fetchNextPage(postsPagination);
+              fetchNextPage();
             }}
             className={styles.loadMorePostsButton}
           >

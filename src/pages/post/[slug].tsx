@@ -1,8 +1,6 @@
 import { GetStaticPaths, GetStaticProps } from 'next';
 import Head from 'next/head';
 import Prismic from '@prismicio/client';
-import { format, parseISO } from 'date-fns';
-import ptBR from 'date-fns/locale/pt-BR';
 import { FiCalendar, FiUser, FiClock } from 'react-icons/fi';
 import { RichText } from 'prismic-dom';
 import { useRouter } from 'next/router';
@@ -12,6 +10,7 @@ import { getPrismicClient } from '../../services/prismic';
 import Comments from '../../components/Comments';
 import commonStyles from '../../styles/common.module.scss';
 import styles from './post.module.scss';
+import { editDateFormat, publicationDateFormat } from '../../utils/formatDate';
 
 interface Post {
   first_publication_date: string | null;
@@ -31,8 +30,16 @@ interface Post {
   };
 }
 
+interface NeighborPost {
+  title: string;
+  uid: string;
+}
+
 interface PostProps {
   post: Post;
+  preview: boolean;
+  nextPost: NeighborPost;
+  previousPost: NeighborPost;
 }
 
 export default function Post({
@@ -40,7 +47,7 @@ export default function Post({
   preview,
   previousPost,
   nextPost,
-}: PostProps) {
+}: PostProps): JSX.Element {
   const router = useRouter();
 
   if (router.isFallback) {
@@ -50,9 +57,9 @@ export default function Post({
 
   const totalWordsQuantity = post.data.content.reduce(
     (wordsAccumulator, valorAtual) => {
-      wordsAccumulator += RichText.asText(valorAtual.body).split(/\W+/).length;
-
-      return wordsAccumulator;
+      return (
+        wordsAccumulator + RichText.asText(valorAtual.body).split(/\W+/).length
+      );
     },
     0
   );
@@ -75,9 +82,7 @@ export default function Post({
           <div>
             <span>
               <FiCalendar size={20} />
-              {format(new Date(post.first_publication_date), 'PP', {
-                locale: ptBR,
-              })}
+              {publicationDateFormat(post.first_publication_date)}
             </span>
             <span>
               <FiUser size={20} />
@@ -89,15 +94,7 @@ export default function Post({
             </span>
           </div>
           {post.last_publication_date !== post.first_publication_date && (
-            <p>
-              {format(
-                parseISO(post.last_publication_date),
-                "'*editado em' dd MMM yyyy', às' HH:mm",
-                {
-                  locale: ptBR,
-                }
-              )}
-            </p>
+            <p>{editDateFormat(post.last_publication_date)}</p>
           )}
         </div>
         {post.data.content.map(content => (
@@ -162,6 +159,15 @@ export const getStaticPaths: GetStaticPaths = async () => {
   };
 };
 
+function checkNeighborPost(neighborPosts): NeighborPost {
+  return neighborPosts.length > 0
+    ? {
+        uid: neighborPosts[0]?.uid,
+        title: neighborPosts[0]?.data?.title,
+      }
+    : null;
+}
+
 export const getStaticProps: GetStaticProps = async ({
   params,
   preview = false,
@@ -192,21 +198,9 @@ export const getStaticProps: GetStaticProps = async ({
     }
   );
 
-  const previousPost =
-    previousPostResponse.results.length > 0
-      ? {
-          uid: previousPostResponse.results[0]?.uid,
-          title: previousPostResponse.results[0]?.data?.title,
-        }
-      : null;
+  const previousPost = checkNeighborPost(previousPostResponse.results);
 
-  const nextPost =
-    nextPostResponse.results.length > 0
-      ? {
-          uid: nextPostResponse.results[0]?.uid,
-          title: nextPostResponse.results[0]?.data?.title,
-        }
-      : null;
+  const nextPost = checkNeighborPost(nextPostResponse.results);
 
   const post = {
     first_publication_date: response.first_publication_date,
@@ -227,7 +221,7 @@ export const getStaticProps: GetStaticProps = async ({
       }),
     },
   };
-  console.log(response.data.banner);
+
   return {
     props: { post, preview, previousPost, nextPost },
   };
